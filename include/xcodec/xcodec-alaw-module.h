@@ -21,31 +21,14 @@
 
 _Pragma("once")
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef struct xcodec_alaw_encoder_s        xcodec_alaw_encoder_t;
-typedef struct xcode_alaw_enc_params_s      xcode_alaw_enc_params_t;
-typedef enum xcode_alaw_sample_rates_e      xcode_alaw_sample_rates_t;
-typedef enum xcode_alaw_channel_layouts_e   xcode_alaw_channel_layouts_t;
 typedef struct xcodec_alaw_encoder_module_s xcodec_alaw_encoder_module_t;
 
-enum xcode_alaw_sample_rates_e {
-    ALAW_SAMPLE_RATE_8000  = 8000,
-    ALAW_SAMPLE_RATE_16000 = 16000,
-    ALAW_SAMPLE_RATE_44100 = 44100,
-    ALAW_SAMPLE_RATE_48000 = 48000,
-};
-
-enum xcode_alaw_channel_layouts_e {
-    ALAW_CHANNEL_LAYOUT_MONO   = 1,
-    ALAW_CHANNEL_LAYOUT_STEREO = 2,
-};
-
-struct xcode_alaw_enc_params_s {
-    xcode_alaw_sample_rates_t sample_rate;
-    xcode_alaw_channel_layouts_t channel_layout;
-};
+typedef struct xcodec_alaw_encoder_s        xcodec_alaw_decoder_t;
+typedef struct xcodec_alaw_decoder_module_s xcodec_alaw_decoder_module_t;
 
 struct xcodec_alaw_encoder_s {
     void* opaque;
@@ -54,14 +37,55 @@ struct xcodec_alaw_encoder_s {
 struct xcodec_alaw_encoder_module_s {
     const char* restrict name;
 
-    xcodec_alaw_encoder_t* (*create)(xcode_alaw_enc_params_t* params);
-    bool (*encode)(
-        xcodec_alaw_encoder_t* encoder,
-        int16_t*               src,
-        int                    slen,
-        uint8_t*               dst,
-        int                    dlen);
+    xcodec_alaw_encoder_t* (*create)(int samplerate, int channels);
+
+    /**
+     * @brief Encode raw PCM audio data into A-law compressed data.
+     *
+     * This function encodes raw PCM audio data directly into a provided output
+     * buffer as A-law compressed data. It is designed for maximum performance
+     * when the input PCM data conforms to the specific format requirements
+     * detailed below.
+     *
+     * **CRITICAL INPUT FORMAT REQUIREMENTS (for `pcm` data):**
+     *   - **Sample Format:** 16-bit signed integer (s16).
+     *   - **Layout:** Interleaved (Packed). Planar layout is not supported.
+     *   - **Endianness:** Host native byte order. The function does NOT perform
+     *     byte-swapping. Data must be pre-converted if read from a foreign
+     *     endianness source (e.g., network stream, big-endian file).
+     *
+     * **OUTPUT BUFFER MANAGEMENT (Caller's Responsibility):**
+     *   - The `alaw` parameter must point to a caller-allocated output buffer.
+     *   - The buffer must have sufficient capacity to hold the encoded A-law
+     *     data. A **safe and minimum** allocation size is `(pcmlen / 2)` bytes, as
+     *     each 16-bit PCM sample is encoded into exactly 1 byte of A-law data.
+     *   - The caller is responsible for managing the lifecycle of this buffer
+     *     (allocation and deallocation).
+     *
+     * @param encoder Pointer to the encoder instance, obtained from create().
+     * @param pcm     Pointer to the buffer containing the raw PCM audio data to encode.
+     * @param pcmlen  Length of the input PCM data in bytes.
+     * @param alaw    Pointer to a caller-allocated output buffer.
+     *                On successful return, this buffer will contain the encoded
+     *                A-law data.
+     *
+     * @return        On success: The length (in bytes) of the encoded A-law
+     *                data written to the `alaw` buffer. This will be exactly `(pcmlen / 2)`.
+     *                On failure: A negative integer error code.
+     *                Typical error codes may indicate invalid parameters or
+     *                unsupported PCM data format.
+     */
+    int (*encode)(xcodec_alaw_encoder_t* encoder, uint8_t* pcm, int pcmlen, uint8_t* alaw);
     void (*destroy)(xcodec_alaw_encoder_t* encoder);
 };
 
+struct xcodec_alaw_decoder_module_s {
+    const char* restrict name;
+
+    xcodec_alaw_decoder_t* (*create)(int samplerate, int channels);
+    int (*decode)(xcodec_alaw_decoder_t* decoder, uint8_t* alaw, int alawlen, uint8_t* pcm);
+    void (*destroy)(xcodec_alaw_decoder_t* decoder);
+};
+
 extern xcodec_alaw_encoder_module_t xcodec_alaw_encoder;
+extern xcodec_alaw_decoder_module_t xcodec_alaw_decoder;

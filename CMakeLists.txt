@@ -23,10 +23,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set(SRCS
-	src/xcodec.c
-
-	src/modules/alaw/xcodec-alaw-encoder.c
-	src/modules/alaw/xcodec-alaw-module.c
+	src/alaw/xcodec-alaw-encoder.c
+	src/alaw/xcodec-alaw-decoder.c
+	src/alaw/xcodec-alaw-module.c
 )
 
 if(WIN32)
@@ -50,16 +49,26 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
 endif()
 
 add_library(ssl IMPORTED STATIC)
+add_library(crypto IMPORTED STATIC)
 
 if(WIN32)
 	set_target_properties(ssl PROPERTIES
 		IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/third-party/openssl3/lib/${CMAKE_SYSTEM_PROCESSOR}/win/ssl.lib"
 		INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/third-party/openssl3//include")
+
+	set_target_properties(crypto PROPERTIES
+		IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/third-party/openssl3/lib/${CMAKE_SYSTEM_PROCESSOR}/win/crypto.lib"
+		INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/third-party/openssl3//include" 
+		INTERFACE_LINK_LIBRARIES "Crypt32.lib")
 endif()
 
 if(UNIX)
 	set_target_properties(ssl PROPERTIES
 		IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/third-party/openssl3/lib/${CMAKE_SYSTEM_PROCESSOR}/unix/libssl.a"
+		INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/third-party/openssl3//include")
+
+	set_target_properties(crypto PROPERTIES
+		IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/third-party/openssl3/lib/${CMAKE_SYSTEM_PROCESSOR}/unix/libcrypto.a"
 		INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/third-party/openssl3//include")
 endif()
 
@@ -76,7 +85,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include DESTINATION . FILES_MATCHI
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/docs DESTINATION . FILES_MATCHING PATTERN "*")
 install(TARGETS xcodec DESTINATION lib)
 
-#add_subdirectory(examples)
+add_subdirectory(examples)
 
 #if(ENABLE_TESTING)
 #	enable_testing()

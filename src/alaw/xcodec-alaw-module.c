@@ -19,10 +19,21 @@
  *  IN THE SOFTWARE.
  */
 
-_Pragma("once")
+#include "xcodec-alaw-encoder.h"
+#include "xcodec-alaw-decoder.h"
 
 #include "xcodec/xcodec-alaw-module.h"
 
-extern xcodec_alaw_encoder_t* xcodec_alaw_encoder_create(xcode_alaw_enc_params_t* params);
-extern bool xcodec_alaw_encoder_encode(xcodec_alaw_encoder_t* encoder, int16_t* src, int slen, uint8_t* dst, int dlen);
-extern void xcodec_alaw_encoder_destroy(xcodec_alaw_encoder_t* encoder);
+xcodec_alaw_encoder_module_t xcodec_alaw_encoder = {
+    .name    = "Xcodec A-law Encoder",
+    .create  = xcodec_alaw_encoder_create,
+    .encode  = xcodec_alaw_encoder_encode,
+    .destroy = xcodec_alaw_encoder_destroy,
+};
+
+xcodec_alaw_decoder_module_t xcodec_alaw_decoder = {
+    .name    = "Xcodec A-law Decoder",
+    .create  = xcodec_alaw_decoder_create,
+    .decode  = xcodec_alaw_decoder_decode,
+    .destroy = xcodec_alaw_decoder_destroy,
+};

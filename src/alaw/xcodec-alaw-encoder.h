@@ -19,3 +19,10 @@
  *  IN THE SOFTWARE.
  */
 
+_Pragma("once")
+
+#include "xcodec/xcodec-alaw-module.h"
+
+extern xcodec_alaw_encoder_t* xcodec_alaw_encoder_create(int samplerate, int channels);
+extern int xcodec_alaw_encoder_encode(xcodec_alaw_encoder_t* encoder, uint8_t* pcm, int pcmlen, uint8_t* alaw);
+extern void xcodec_alaw_encoder_destroy(xcodec_alaw_encoder_t* encoder);
